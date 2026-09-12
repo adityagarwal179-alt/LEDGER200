@@ -159,7 +159,7 @@
                                             <div class="flex items-center gap-2">
                                                 <h4 class="font-semibold text-slate-800">${p.name}</h4>
                                                 <span class="text-xs px-2 py-0.5 rounded-md font-medium ${balance >= 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">
-                                                    ${balance >= 0 ? 'You'll Give ₹' + balance : 'You'll Get ₹' + Math.abs(balance)}
+                                                    ${balance >= 0 ? 'You\'ll Give ₹' + balance : 'You\'ll Get ₹' + Math.abs(balance)}
                                                 </span>
                                             </div>
                                             <p class="text-xs text-slate-500">Phone: ${p.phone} | Secure PIN: <code class="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-bold">${p.pin}</code></p>
@@ -282,7 +282,7 @@
                         <div>
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Net Balance</p>
                             <h2 class="text-2xl font-bold ${netBalance >= 0 ? 'text-rose-600' : 'text-emerald-600'}">
-                                ${netBalance >= 0 ? '₹' + netBalance + ' (You'll Give)' : '₹' + Math.abs(netBalance) + ' (You\'ll Get)'}
+                                ${netBalance >= 0 ? '₹' + netBalance + ' (You\'ll Give)' : '₹' + Math.abs(netBalance) + ' (You\'ll Get)'}
                             </h2>
                         </div>
                         <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-500">
