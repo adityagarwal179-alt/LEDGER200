@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Business Ledger & Customer Portal</title>
+    <title>LedgerPro with UPI Payment & Secure Share</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -15,158 +15,131 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- Application Container -->
+    <!-- Application Root Container -->
     <div id="app" class="flex-grow flex flex-col">
-        <!-- Dynamic Content Rendered Here -->
+        <div class="flex items-center justify-center flex-grow p-4">
+            <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mb-2"></div>
+                <p class="text-slate-500 text-sm">Loading LedgerPro...</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Application JavaScript Logic -->
+    <!-- Application Script -->
     <script>
-        // LocalStorage Keys
-        const STORAGE_KEYS = {
-            PARTIES: 'pro_ledger_parties_v1',
-            TRANSACTIONS: 'pro_ledger_transactions_v1'
-        };
+        const MERCHANT_UPI = 'adityaagarwal17092004@oksbi';
+        const STORAGE_KEY_PARTIES = 'ledger_parties_v3';
+        const STORAGE_KEY_TXNS = 'ledger_txns_v3';
 
-        function getStoredParties() {
-            try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEYS.PARTIES)) || [];
-            } catch (e) { return []; }
+        function getParties() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY_PARTIES)) || []; } catch(e) { return []; }
         }
-
-        function getStoredTransactions() {
-            try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEYS.TRANSACTIONS)) || [];
-            } catch (e) { return []; }
+        function getTxns() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY_TXNS)) || []; } catch(e) { return []; }
         }
+        function saveParties(data) { localStorage.setItem(STORAGE_KEY_PARTIES, JSON.stringify(data)); }
+        function saveTxns(data) { localStorage.setItem(STORAGE_KEY_TXNS, JSON.stringify(data)); }
 
-        function saveParties(parties) {
-            localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(parties));
-        }
+        window.addEventListener('DOMContentLoaded', initRouter);
+        window.addEventListener('hashchange', initRouter);
 
-        function saveTransactions(transactions) {
-            localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
-        }
-
-        // Router Initialization
-        window.addEventListener('DOMContentLoaded', () => {
-            handleRouting();
-            window.addEventListener('hashchange', handleRouting);
-        });
-
-        function handleRouting() {
+        function initRouter() {
             const hash = window.location.hash;
-            const appDiv = document.getElementById('app');
-
-            if (hash.startsWith('#view=')) {
-                const customerCode = hash.replace('#view=', '');
-                renderCustomerPortal(customerCode, appDiv);
+            const app = document.getElementById('app');
+            
+            if (hash.startsWith('#data=')) {
+                // Customer Portal via Shareable Encoded Link
+                const encodedData = hash.replace('#data=', '');
+                try {
+                    const partyData = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
+                    renderCustomerView(partyData, app);
+                } catch(err) {
+                    app.innerHTML = renderErrorBox("Invalid or Corrupted Link! Please ask merchant for a new link.");
+                }
             } else {
-                renderAdminDashboard(appDiv);
+                // Admin Dashboard
+                renderAdminView(app);
             }
         }
 
-        // 1. ADMIN DASHBOARD VIEW
-        function renderAdminDashboard(container) {
-            const parties = getStoredParties();
-            const transactions = getStoredTransactions();
+        function renderErrorBox(msg) {
+            return `
+                <div class="flex-grow flex items-center justify-center p-4">
+                    <div class="bg-white p-8 rounded-2xl border border-slate-200 text-center max-w-sm w-full shadow-sm">
+                        <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="alert-circle"></i></div>
+                        <h2 class="font-bold text-slate-800 text-lg mb-1">Link Error</h2>
+                        <p class="text-xs text-slate-500 mb-4">${msg}</p>
+                        <a href="./" class="block bg-slate-900 text-white py-2.5 rounded-xl text-sm font-medium">Go Home</a>
+                    </div>
+                </div>`;
+        }
+
+        function renderAdminView(container) {
+            const parties = getParties();
+            const txns = getTxns();
 
             container.innerHTML = `
                 <header class="bg-slate-900 text-white shadow-sm">
-                    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="layers" class="text-indigo-400"></i>
-                            <h1 class="text-lg font-bold">LedgerPro Dashboard</h1>
-                        </div>
-                        <span class="text-xs bg-slate-800 text-indigo-300 px-3 py-1 rounded-full font-medium border border-slate-700">Admin Mode</span>
+                    <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+                        <h1 class="font-bold text-lg flex items-center gap-2"><i data-lucide="book-open" class="text-indigo-400"></i> LedgerPro Admin</h1>
+                        <span class="text-xs bg-slate-800 text-indigo-300 px-2.5 py-1 rounded-full border border-slate-700">UPI: ${MERCHANT_UPI}</span>
                     </div>
                 </header>
-                <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full space-y-8">
-                    <!-- Add Party & Stats Section -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 lg:col-span-1">
-                            <h2 class="text-base font-semibold mb-4 text-slate-800 flex items-center gap-2">
-                                <i data-lucide="user-plus" class="w-4 h-4 text-indigo-600"></i> Add New Party
-                            </h2>
-                            <form id="add-party-form" class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Party Name</label>
-                                    <input type="text" id="party-name" placeholder="e.g. Ramesh Traders" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Phone Number</label>
-                                    <input type="text" id="party-phone" placeholder="9876543210" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                </div>
-                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-sm flex items-center justify-center gap-2">
-                                    Create Party & Secure Link
-                                </button>
+                <main class="max-w-5xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Add Party -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-1">
+                            <h2 class="font-semibold text-slate-800 mb-4 text-sm flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-indigo-600"></i> Add Party</h2>
+                            <form id="party-form" class="space-y-3">
+                                <input type="text" id="p-name" placeholder="Party Name" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                                <input type="text" id="p-phone" placeholder="Phone Number" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-xl text-sm transition">Create & Get Link</button>
                             </form>
                         </div>
-
-                        <!-- Add Transaction Section -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 lg:col-span-2">
-                            <h2 class="text-base font-semibold mb-4 text-slate-800 flex items-center gap-2">
-                                <i data-lucide="file-text" class="w-4 h-4 text-indigo-600"></i> Record Transaction
-                            </h2>
-                            <form id="add-transaction-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Select Party</label>
-                                    <select id="txn-party-id" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                        <option value="">Choose Party</option>
-                                        ${parties.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Amount (₹)</label>
-                                    <input type="number" id="txn-amount" placeholder="0.00" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Type</label>
-                                    <select id="txn-type" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                        <option value="given">You Gave (-)</option>
-                                        <option value="got">You Got (+)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Description / Notes</label>
-                                    <input type="text" id="txn-desc" placeholder="Bill no, item name..." class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                                </div>
-                                <div class="md:col-span-2">
-                                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-sm">
-                                        Save Transaction Entry
-                                    </button>
-                                </div>
+                        <!-- Add Transaction -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-2">
+                            <h2 class="font-semibold text-slate-800 mb-4 text-sm flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-indigo-600"></i> Record Entry</h2>
+                            <form id="txn-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <select id="t-party" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="">Select Party</option>
+                                    ${parties.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                                </select>
+                                <input type="number" id="t-amount" placeholder="Amount (₹)" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                                <select id="t-type" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="given">You Gave (-)</option>
+                                    <option value="got">You Got (+)</option>
+                                </select>
+                                <input type="text" id="t-desc" placeholder="Description / Bill No." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                                <button type="submit" class="sm:col-span-2 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl text-sm transition">Save Transaction</button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Parties & Portal Links Table -->
+                    <!-- Party List Table -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-                            <h3 class="font-semibold text-slate-800 text-base">Registered Parties & Portal Links</h3>
-                            <span class="text-xs text-slate-400">Total: ${parties.length} Parties</span>
-                        </div>
-                        <div class="divide-y divide-slate-100 overflow-x-auto">
-                            ${parties.length === 0 ? '<p class="p-8 text-center text-slate-400 text-sm">No parties registered yet. Add a party to begin.</p>' : ''}
+                        <div class="p-4 border-b border-slate-100 font-semibold text-slate-700 text-sm">Registered Parties & WhatsApp Share Links</div>
+                        <div class="divide-y divide-slate-100">
+                            ${parties.length === 0 ? '<p class="p-6 text-center text-slate-400 text-sm">No parties added yet.</p>' : ''}
                             ${parties.map(p => {
-                                const portalLink = `${window.location.origin}${window.location.pathname}#view=${p.code}`;
-                                const pTxns = transactions.filter(t => t.partyId === p.id);
-                                const balance = pTxns.reduce((acc, t) => t.type === 'given' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
+                                const pTxns = txns.filter(t => t.partyId === p.id);
+                                const payload = {
+                                    name: p.name,
+                                    phone: p.phone,
+                                    pin: p.pin,
+                                    txns: pTxns
+                                };
+                                const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+                                const shareLink = `${window.location.origin}${window.location.pathname}#data=${encoded}`;
                                 
                                 return `
-                                    <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/50 transition">
-                                        <div class="space-y-1">
-                                            <div class="flex items-center gap-2">
-                                                <h4 class="font-semibold text-slate-800">${p.name}</h4>
-                                                <span class="text-xs px-2 py-0.5 rounded-md font-medium ${balance >= 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">
-                                                    ${balance >= 0 ? 'You\'ll Give ₹' + balance : 'You\'ll Get ₹' + Math.abs(balance)}
-                                                </span>
-                                            </div>
-                                            <p class="text-xs text-slate-500">Phone: ${p.phone} | Secure PIN: <code class="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-600 font-bold">${p.pin}</code></p>
+                                    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition">
+                                        <div>
+                                            <h3 class="font-semibold text-slate-800 text-sm">${p.name}</h3>
+                                            <p class="text-xs text-slate-500">Phone: ${p.phone} | PIN: <code class="bg-slate-100 text-indigo-600 font-bold px-1.5 py-0.5 rounded">${p.pin}</code> | Entries: ${pTxns.length}</p>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <button onclick="navigator.clipboard.writeText('${portalLink}'); alert('Secure customer portal link copied successfully!');" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border border-emerald-200/50">
-                                                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Link
+                                            <button onclick="navigator.clipboard.writeText('${shareLink}'); alert('WhatsApp shareable link copied successfully! You can send it to ${p.name}.');" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 border border-emerald-200">
+                                                <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Copy WhatsApp Link
                                             </button>
                                         </div>
                                     </div>
@@ -176,134 +149,113 @@
                     </div>
                 </main>
             `;
-
             lucide.createIcons();
 
-            // Form Submit Events
-            document.getElementById('add-party-form').addEventListener('submit', (e) => {
+            document.getElementById('party-form').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const name = document.getElementById('party-name').value.trim();
-                const phone = document.getElementById('party-phone').value.trim();
-                
-                const uniqueCode = Math.random().toString(36).substring(2) + Date.now().toString(36);
-                const accessPin = Math.floor(100000 + Math.random() * 900000).toString();
+                const name = document.getElementById('p-name').value.trim();
+                const phone = document.getElementById('p-phone').value.trim();
+                const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-                parties.push({ id: Date.now(), name, phone, code: uniqueCode, pin: accessPin });
+                parties.push({ id: Date.now(), name, phone, pin });
                 saveParties(parties);
-                handleRouting();
+                initRouter();
             });
 
-            document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
+            document.getElementById('txn-form').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const partyId = Number(document.getElementById('txn-party-id').value);
-                const amount = Number(document.getElementById('txn-amount').value);
-                const type = document.getElementById('txn-type').value;
-                const description = document.getElementById('txn-desc').value.trim();
+                const partyId = Number(document.getElementById('t-party').value);
+                const amount = Number(document.getElementById('t-amount').value);
+                const type = document.getElementById('t-type').value;
+                const description = document.getElementById('t-desc').value.trim();
                 const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-                transactions.push({ id: Date.now(), partyId, amount, type, description, date });
-                saveTransactions(transactions);
-                handleRouting();
+                txns.push({ id: Date.now(), partyId, amount, type, description, date });
+                saveTxns(txns);
+                initRouter();
             });
         }
 
-        // 2. CUSTOMER PORTAL VIEW
-        function renderCustomerPortal(code, container) {
-            const parties = getStoredParties();
-            const party = parties.find(p => p.code === code);
+        function renderCustomerView(partyData, container) {
+            const authKey = `auth_${partyData.phone}`;
+            const verified = sessionStorage.getItem(authKey) === 'true';
 
-            if (!party) {
+            if (!verified) {
                 container.innerHTML = `
                     <div class="flex-grow flex items-center justify-center p-4">
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center max-w-md w-full">
-                            <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="alert-circle"></i></div>
-                            <h2 class="text-xl font-bold text-slate-800 mb-2">Invalid or Expired Link</h2>
-                            <p class="text-slate-500 text-sm mb-6">This secure portal link is no longer valid or has been removed.</p>
-                            <a href="./" class="block w-full bg-slate-900 text-white font-medium py-2.5 rounded-xl text-center text-sm">Return Home</a>
-                        </div>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-
-            const isVerified = sessionStorage.getItem(`verified_${code}`) === 'true';
-
-            if (!isVerified) {
-                container.innerHTML = `
-                    <div class="flex-grow flex items-center justify-center p-4">
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-md w-full">
-                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="lock"></i></div>
-                            <h2 class="text-xl font-bold text-slate-800 text-center mb-1">Customer Portal</h2>
-                            <p class="text-slate-500 text-sm text-center mb-6">Protected Ledger for <b>${party.name}</b></p>
-                            
-                            <form id="pin-form" class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Enter 6-Digit Access PIN</label>
-                                    <input type="password" id="pin-input" maxlength="6" placeholder="******" required class="w-full text-center tracking-widest text-lg border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-                                </div>
-                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition text-sm">Verify & View Ledger</button>
+                        <div class="bg-white p-8 rounded-2xl border border-slate-200 max-w-sm w-full shadow-sm">
+                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3"><i data-lucide="lock"></i></div>
+                            <h2 class="font-bold text-slate-800 text-center mb-1">Customer Portal</h2>
+                            <p class="text-xs text-slate-500 text-center mb-4">Enter 6-digit PIN provided by <b>${partyData.name}</b></p>
+                            <form id="pin-form" class="space-y-3">
+                                <input type="password" id="pin-box" maxlength="6" placeholder="******" required class="w-full text-center tracking-widest text-lg border border-slate-300 rounded-xl py-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                                <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-medium">Verify PIN</button>
                             </form>
-                            <p id="pin-error" class="text-rose-500 text-xs text-center mt-3 hidden">Incorrect PIN. Please check with your merchant.</p>
+                            <p id="pin-err" class="text-rose-500 text-xs text-center mt-2 hidden">Incorrect PIN!</p>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 lucide.createIcons();
-
+                
                 document.getElementById('pin-form').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const enteredPin = document.getElementById('pin-input').value.trim();
-                    if (enteredPin === party.pin) {
-                        sessionStorage.setItem(`verified_${code}`, 'true');
-                        renderCustomerPortal(code, container);
+                    if (document.getElementById('pin-box').value.trim() === partyData.pin) {
+                        sessionStorage.setItem(authKey, 'true');
+                        renderCustomerView(partyData, container);
                     } else {
-                        document.getElementById('pin-error').classList.remove('hidden');
+                        document.getElementById('pin-err').classList.remove('hidden');
                     }
                 });
                 return;
             }
 
-            const transactions = getStoredTransactions().filter(t => t.partyId === party.id);
-            const netBalance = transactions.reduce((acc, t) => t.type === 'given' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
+            const txns = partyData.txns || [];
+            const netBalance = txns.reduce((acc, t) => t.type === 'given' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
+            const upiLink = `upi://pay?pa=${MERCHANT_UPI}&pn=BusinessLedger&am=${Math.abs(netBalance)}&cu=INR`;
 
             container.innerHTML = `
                 <header class="bg-slate-900 text-white shadow-sm">
-                    <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+                    <div class="max-w-2xl mx-auto px-4 py-4 flex justify-between items-center">
                         <div>
-                            <h1 class="font-bold text-base">${party.name}</h1>
-                            <p class="text-xs text-slate-400">Secure Live Ledger View</p>
+                            <h1 class="font-bold text-sm">${partyData.name}</h1>
+                            <p class="text-xs text-slate-400">Live Secure Ledger</p>
                         </div>
-                        <button onclick="sessionStorage.removeItem('verified_${code}'); handleRouting();" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg text-slate-300 transition">Lock Session</button>
+                        <button onclick="sessionStorage.removeItem('${authKey}'); location.hash='';" class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300">Lock Session</button>
                     </div>
                 </header>
-                <main class="max-w-3xl mx-auto px-4 py-8 flex-grow w-full space-y-6">
-                    <!-- Balance Summary Card -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center justify-between">
+                <main class="max-w-2xl mx-auto px-4 py-6 flex-grow w-full space-y-4">
+                    <!-- Balance & Pay Now Card -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                         <div>
                             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Net Balance</p>
                             <h2 class="text-2xl font-bold ${netBalance >= 0 ? 'text-rose-600' : 'text-emerald-600'}">
                                 ${netBalance >= 0 ? '₹' + netBalance + ' (You\'ll Give)' : '₹' + Math.abs(netBalance) + ' (You\'ll Get)'}
                             </h2>
                         </div>
-                        <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-500">
-                            <i data-lucide="wallet"></i>
-                        </div>
+                        ${netBalance > 0 ? `
+                            <a href="${upiLink}" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-sm">
+                                <i data-lucide="send" class="w-4 h-4"></i> Pay Now (₹${netBalance})
+                            </a>
+                        ` : ''}
                     </div>
 
-                    <!-- Transactions List -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="p-5 border-b border-slate-100 font-semibold text-slate-800 text-sm">Transaction History</div>
+                    <!-- Transactions History -->
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="p-4 border-b border-slate-100 font-semibold text-xs text-slate-500 uppercase flex justify-between items-center">
+                            <span>Transaction History</span>
+                            <span>Total Entries: ${txns.length}</span>
+                        </div>
                         <div class="divide-y divide-slate-100">
-                            ${transactions.length === 0 ? '<p class="p-8 text-center text-slate-400 text-sm">No transactions recorded yet.</p>' : ''}
-                            ${transactions.map(t => `
-                                <div class="p-4 flex items-center justify-between hover:bg-slate-50/50 transition">
-                                    <div class="space-y-0.5">
-                                        <p class="text-sm font-medium text-slate-800">${t.description || 'General Transaction'}</p>
+                            ${txns.length === 0 ? '<p class="p-6 text-center text-slate-400 text-sm">No transactions found.</p>' : ''}
+                            ${txns.map(t => `
+                                <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition">
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-800">${t.description || 'General Entry'}</p>
                                         <p class="text-xs text-slate-400">${t.date}</p>
                                     </div>
                                     <span class="font-bold text-sm ${t.type === 'given' ? 'text-rose-600' : 'text-emerald-600'}">
                                         ${t.type === 'given' ? '-' : '+'}₹${t.amount}
                                     </span>
+                                }}>
                                 </div>
                             `).join('')}
                         </div>
